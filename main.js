@@ -69,6 +69,14 @@ function init() {
     camera.position.z = 15;
 
     document.addEventListener('mousedown', onDocumentMouseDown, false)
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight
+        camera.updateProjectionMatrix()
+        renderer.setSize(window.innerWidth, window.innerHeight)
+    }
+
+    window.addEventListener('resize', onWindowResize, false)
 }
 
 function animate() {
@@ -145,7 +153,8 @@ function rotateAroundWorldAxis(object, axis, radians) {
     let rotationMatrix = new THREE.Matrix4();
 
     rotationMatrix.makeRotationAxis(axis.normalize(), radians);
-    rotationMatrix.multiply(object.matrix);                       
+    rotationMatrix.multiply(object.matrix);
     object.matrix = rotationMatrix;
     object.rotation.setFromRotationMatrix(object.matrix);
 }
+
