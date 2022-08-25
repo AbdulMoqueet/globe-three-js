@@ -24,7 +24,7 @@ let windowHalfY = window.innerHeight / 2;
 
 let slowingFactor = 0.30;
 
-let sphere, renderer, scene, camera
+let sphere, renderer, scene, camera, group
 
 function init() {
     scene = new THREE.Scene();
@@ -64,7 +64,10 @@ function init() {
 
     scene.add(atmosphere)
 
-    scene.add(sphere)
+    group = new THREE.Group()
+    group.add(sphere)
+
+    scene.add(group)
 
     camera.position.z = 15;
 
@@ -81,6 +84,7 @@ function init() {
 
 function animate() {
     requestAnimationFrame(animate);
+    group.rotation.y += 0.009
     render()
 };
 
@@ -111,6 +115,7 @@ function onDocumentMouseMove(event) {
     mouseY = event.clientY - windowHalfY;
 
     targetRotationY = (mouseY - mouseYOnMouseDown) * 0.00025;
+    group.rotation.y = group.rotation.y
 }
 
 function onDocumentMouseUp(event) {
