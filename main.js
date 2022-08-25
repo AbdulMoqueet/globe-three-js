@@ -5,68 +5,147 @@ import fragmentShader from '/shader/fragment.glsl'
 import atmosphereVertexShader from '/shader/atmosphereVertex.glsl'
 import atmosphereFragmentShader from '/shader/atmosphereFragment.glsl'
 
-const scene = new THREE.Scene();
+import globe from '/globe.jpg'
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+let targetRotationX = 0.5;
+let targetRotationOnMouseDownX = 0;
 
-const renderer = new THREE.WebGLRenderer({
-    antialias: true
-});
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio)
-document.body.appendChild(renderer.domElement);
+let targetRotationY = 0.2;
+let targetRotationOnMouseDownY = 0;
 
-// crete a sphere
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(5, 50, 50),
-new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader,
-    uniforms: {
-        globeTexture: {
-            value: new THREE.TextureLoader().load('https://abdulmoqueet.github.io/solo-files/globe.jpg')
-        }
-    }
-}))
+let mouseX = 0;
+let mouseXOnMouseDown = 0;
 
-// crete a Atmosphere
-const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(5, 50, 50),
-new THREE.ShaderMaterial({
-    vertexShader: atmosphereVertexShader,
-    fragmentShader: atmosphereFragmentShader,
-    blending: THREE.AdditiveBlending,
-    // side: THREE.BackSide,
-    shadowSide: THREE.BackSide
-}))
+let mouseY = 0;
+let mouseYOnMouseDown = 0;
 
-atmosphere.scale.set(1.2, 1.2, 1.2)
+let windowHalfX = window.innerWidth / 2;
+let windowHalfY = window.innerHeight / 2;
 
-scene.add(atmosphere)
+let slowingFactor = 0.30;
 
-const group = new THREE.Group()
-group.add(sphere)
-scene.add(group)
+let sphere, renderer, scene, camera
 
-camera.position.z = 15;
+function init() {
+    scene = new THREE.Scene();
 
-const mouse = {
-    x: 0,
-    y: 0
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    renderer = new THREE.WebGLRenderer({
+        antialias: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio)
+    document.body.appendChild(renderer.domElement);
+
+    // crete a sphere
+    sphere = new THREE.Mesh(new THREE.SphereGeometry(5, 50, 50),
+        new THREE.ShaderMaterial({
+            vertexShader,
+            fragmentShader,
+            uniforms: {
+                globeTexture: {
+                    value: new THREE.TextureLoader().load(globe)
+                }
+            }
+        }))
+
+    // crete a Atmosphere
+    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(5, 50, 50),
+        new THREE.ShaderMaterial({
+            vertexShader: atmosphereVertexShader,
+            fragmentShader: atmosphereFragmentShader,
+            blending: THREE.AdditiveBlending,
+            // side: THREE.BackSide,
+            shadowSide: THREE.BackSide
+        }))
+
+    atmosphere.scale.set(1.2, 1.2, 1.2)
+
+    scene.add(atmosphere)
+
+    scene.add(sphere)
+
+    camera.position.z = 15;
+
+    document.addEventListener('mousedown', onDocumentMouseDown, false)
 }
 
 function animate() {
     requestAnimationFrame(animate);
-    sphere.rotation.y += 0.005
-    renderer.render(scene, camera);
-    group.rotation.y = mouse.x
+    render()
 };
 
+init();
 animate();
 
+function onDocumentMouseDown(event) {
+
+    event.preventDefault();
+
+    document.addEventListener('mousemove', onDocumentMouseMove, false);
+    document.addEventListener('mouseup', onDocumentMouseUp, false);
+    document.addEventListener('mouseout', onDocumentMouseOut, false);
+
+    mouseXOnMouseDown = event.clientX - windowHalfX;
+    targetRotationOnMouseDownX = targetRotationX;
+
+    mouseYOnMouseDown = event.clientY - windowHalfY;
+    targetRotationOnMouseDownY = targetRotationY;
+}
+
+function onDocumentMouseMove(event) {
+
+    mouseX = event.clientX - windowHalfX;
+
+    targetRotationX = (mouseX - mouseXOnMouseDown) * 0.00025;
+
+    mouseY = event.clientY - windowHalfY;
+
+    targetRotationY = (mouseY - mouseYOnMouseDown) * 0.00025;
+}
+
+function onDocumentMouseUp(event) {
+
+    document.removeEventListener('mousemove', onDocumentMouseMove, false);
+    document.removeEventListener('mouseup', onDocumentMouseUp, false);
+    document.removeEventListener('mouseout', onDocumentMouseOut, false);
+}
+
+function onDocumentMouseOut(event) {
+
+    document.removeEventListener('mousemove', onDocumentMouseMove, false);
+    document.removeEventListener('mouseup', onDocumentMouseUp, false);
+    document.removeEventListener('mouseout', onDocumentMouseOut, false);
+}
 
 
-addEventListener('mousemove', ()=>{
-    mouse.x = (event.clientX / innerWidth) * 2 - 1
-    mouse.y = (event.clientY / innerHeight) * 2 + 1
+function render() {
 
-    console.log(mouse);
-})
+    rotateAroundWorldAxis(sphere, new THREE.Vector3(0, 1, 0), targetRotationX);
+    rotateAroundWorldAxis(sphere, new THREE.Vector3(1, 0, 0), targetRotationY);
+
+    targetRotationY = targetRotationY * (1 - slowingFactor);
+    targetRotationX = targetRotationX * (1 - slowingFactor);
+    renderer.render(scene, camera);
+
+}
+
+function rotateAroundObjectAxis(object, axis, radians) {
+    let rotationMatrix = new THREE.Matrix4();
+
+    rotationMatrix.makeRotationAxis(axis.normalize(), radians);
+    object.matrix.multiply(rotationMatrix);
+    object.rotation.setFromRotationMatrix(object.matrix);
+
+}
+
+function rotateAroundWorldAxis(object, axis, radians) {
+
+    let rotationMatrix = new THREE.Matrix4();
+
+    rotationMatrix.makeRotationAxis(axis.normalize(), radians);
+    rotationMatrix.multiply(object.matrix);                       
+    object.matrix = rotationMatrix;
+    object.rotation.setFromRotationMatrix(object.matrix);
+}
