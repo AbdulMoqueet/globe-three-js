@@ -24,7 +24,7 @@ let windowHalfY = window.innerHeight / 2;
 
 let slowingFactor = 0.30;
 
-let sphere, renderer, scene, camera, group
+let sphere, renderer, scene, camera, group, notDrag = true
 
 function init() {
     scene = new THREE.Scene();
@@ -84,7 +84,8 @@ function init() {
 
 function animate() {
     requestAnimationFrame(animate);
-    group.rotation.y += 0.009
+    if(notDrag)
+        group.rotation.y += 0.003
     render()
 };
 
@@ -104,6 +105,8 @@ function onDocumentMouseDown(event) {
 
     mouseYOnMouseDown = event.clientY - windowHalfY;
     targetRotationOnMouseDownY = targetRotationY;
+
+    notDrag = false
 }
 
 function onDocumentMouseMove(event) {
@@ -115,7 +118,8 @@ function onDocumentMouseMove(event) {
     mouseY = event.clientY - windowHalfY;
 
     targetRotationY = (mouseY - mouseYOnMouseDown) * 0.00025;
-    group.rotation.y = group.rotation.y
+    // group.rotation.y = group.rotation.y
+    notDrag = false
 }
 
 function onDocumentMouseUp(event) {
@@ -123,6 +127,7 @@ function onDocumentMouseUp(event) {
     document.removeEventListener('mousemove', onDocumentMouseMove, false);
     document.removeEventListener('mouseup', onDocumentMouseUp, false);
     document.removeEventListener('mouseout', onDocumentMouseOut, false);
+    notDrag = true
 }
 
 function onDocumentMouseOut(event) {
@@ -130,6 +135,7 @@ function onDocumentMouseOut(event) {
     document.removeEventListener('mousemove', onDocumentMouseMove, false);
     document.removeEventListener('mouseup', onDocumentMouseUp, false);
     document.removeEventListener('mouseout', onDocumentMouseOut, false);
+    notDrag = true
 }
 
 
